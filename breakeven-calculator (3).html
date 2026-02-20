@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Break-Even Kalkulátor — Zacíleno</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #ed1e00;
+    --red-dark: #c41800;
+    --red-light: rgba(237,30,0,0.07);
+    --red-border: rgba(237,30,0,0.22);
+    --bg: #f5f4f1;
+    --surface: #ffffff;
+    --surface2: #f9f8f6;
+    --border: #e2e0da;
+    --border2: #ccc9c1;
+    --text: #1a1917;
+    --muted: #8a8780;
+    --success: #1e7d3f;
+    --danger: #c0311f;
+  }
+
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 52px 24px 80px;
+    overflow-x: hidden;
+  }
+
+  /* LIGHTNING */
+  #lightning-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.05s;
+  }
+  #lightning-canvas.active { opacity: 1; }
+
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: white;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0;
+  }
+  .flash-overlay.go { animation: flashAnim 0.18s ease-out forwards; }
+  @keyframes flashAnim { 0% { opacity: 0.7; } 100% { opacity: 0; } }
+
+  /* HEADER */
+  header { width: 100%; max-width: 980px; margin-bottom: 44px; }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .logo-svg-wrap {
+    background: var(--red);
+    border-radius: 10px;
+    padding: 10px 22px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .logo-svg-wrap svg {
+    height: 28px;
+    width: auto;
+    display: block;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--red);
+    background: var(--red-light);
+    border: 1px solid var(--red-border);
+    padding: 5px 13px;
+    border-radius: 4px;
+    margin-bottom: 18px;
+  }
+
+  .eyebrow-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  h1 { font-size: clamp(28px, 4.5vw, 44px); font-weight: 900; line-height: 1.08; letter-spacing: -0.025em; }
+  h1 em { font-style: normal; color: var(--red); }
+
+  .subtitle { margin-top: 12px; color: var(--muted); font-size: 15px; max-width: 500px; line-height: 1.65; }
+
+  /* APP */
+  .app { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 980px; }
+  @media (max-width: 700px) { .app { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  }
+
+  .panel-label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* FIELDS */
+  .field { margin-bottom: 22px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
+  .field label strong { color: var(--text); font-weight: 700; }
+  .input-wrap { position: relative; }
+  .input-wrap input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 54px 13px 16px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -moz-appearance: textfield;
+  }
+  .input-wrap input::-webkit-inner-spin-button,
+  .input-wrap input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .input-wrap input:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(237,30,0,0.1);
+    background: #fff;
+  }
+  .unit {
+    position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+    font-family: 'Roboto Mono', monospace; font-size: 14px; color: var(--muted); pointer-events: none;
+  }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 5px; font-family: 'Roboto Mono', monospace; }
+
+  /* BUTTON */
+  .calc-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px 20px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 2px 12px rgba(237,30,0,0.28);
+  }
+  .calc-btn:hover { background: var(--red-dark); box-shadow: 0 4px 22px rgba(237,30,0,0.38); }
+  .calc-btn:active { transform: scale(0.98); }
+
+  /* RESULTS */
+  .result-block {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+  }
+  .result-block.primary { border-color: var(--red-border); background: var(--red-light); }
+
+  .result-label { font-family: 'Roboto Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .result-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+  .result-value { font-family: 'Roboto Mono', monospace; font-size: 38px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; transition: all 0.25s; }
+  .result-block.primary .result-value { color: var(--red); }
+  .result-block.secondary .result-value { color: var(--text); font-weight: 700; }
+  .result-sub { font-size: 11px; color: var(--muted); margin-top: 8px; font-family: 'Roboto Mono', monospace; }
+
+  .status-bar {
+    margin-top: 18px; padding: 13px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; display: flex; align-items: flex-start; gap: 9px; line-height: 1.45;
+  }
+  .status-bar.ok { background: rgba(30,125,63,0.07); border: 1px solid rgba(30,125,63,0.22); color: var(--success); }
+  .status-bar.warn { background: rgba(192,49,31,0.07); border: 1px solid rgba(192,49,31,0.22); color: var(--danger); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; margin-top: 3px; animation: blink 2s infinite; }
+
+  .formula-box { margin-top: 18px; padding: 15px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+  .formula-title { font-family: 'Roboto Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .formula-line { font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--muted); line-height: 1.9; }
+  .formula-line span { color: var(--red); font-weight: 500; }
+  .divider { height: 1px; background: var(--border); margin: 5px 0; }
+
+  /* TABLE */
+  .table-section { width: 100%; max-width: 980px; margin-top: 20px; }
+  .table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px; box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04); }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  thead tr { border-bottom: 1.5px solid var(--border); }
+  th { font-family: 'Roboto Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: right; font-weight: 500; }
+  th:first-child { text-align: left; }
+  td { font-family: 'Roboto Mono', monospace; font-size: 14px; padding: 13px 14px; text-align: right; border-bottom: 1px solid var(--border); color: var(--text); transition: background 0.12s; }
+  td:first-child { text-align: left; font-size: 13px; color: var(--muted); }
+  tbody tr:hover td { background: var(--surface2); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .cpa-cell { font-weight: 600; }
+  .profit-cell.pos { color: var(--success); font-weight: 600; }
+  .profit-cell.neg { color: var(--danger); font-weight: 600; }
+  .profit-cell.zero { color: var(--muted); }
+
+  .badge { display: inline-block; font-family: 'Roboto Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; vertical-align: middle; margin-left: 7px; }
+  .badge.breakeven { background: rgba(237,30,0,0.1); border: 1px solid rgba(237,30,0,0.28); color: var(--red); }
+  .badge.loss { background: rgba(192,49,31,0.08); border: 1px solid rgba(192,49,31,0.22); color: var(--danger); }
+  .badge.profit { background: rgba(30,125,63,0.08); border: 1px solid rgba(30,125,63,0.22); color: var(--success); }
+  tr.is-breakeven td { background: rgba(237,30,0,0.04); }
+</style>
+</head>
+<body>
+
+<div class="flash-overlay" id="flash-overlay"></div>
+<canvas id="lightning-canvas"></canvas>
+
+<header>
+  <div class="logo-row">
+    <div class="logo-svg-wrap">
+      <svg width="218" height="40" viewBox="0 0 218 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g clip-path="url(#clip0_31_3109)">
+        <path d="M53.4429 26.08L63.7859 13.54V8.972H46.9105V13.54H56.9182V13.836L46.5791 26.248V31.028H63.991V26.376H53.4429V26.08Z" fill="white"/>
+        <path d="M83.5685 11.824H83.2805C82.535 10.692 80.4285 8.428 76.6653 8.428C70.7088 8.428 66.5747 13.208 66.5747 20.128C66.5747 27.048 70.7521 31.576 76.8309 31.576C80.7993 31.576 82.744 29.144 83.3634 28.22H83.6513V31.028H88.9451V8.972H83.5685V11.824ZM77.8605 26.668C74.3852 26.668 72.0302 24.028 72.0302 20.044C72.0302 16.06 74.3892 13.376 77.821 13.376C81.2529 13.376 83.6947 15.892 83.6947 20.044C83.6947 23.736 81.462 26.668 77.8644 26.668H77.8605Z" fill="white"/>
+        <path d="M104.121 13.372C106.645 13.372 108.669 14.924 109.332 17.104H114.83C114.002 11.904 109.663 8.424 104.077 8.424C97.2528 8.424 92.7046 13.5 92.7046 20C92.7046 26.5 97.2528 31.576 104.077 31.576C109.659 31.576 113.963 28.18 114.787 23.064H109.288C108.669 25.204 106.641 26.628 104.16 26.628C100.602 26.628 98.1641 23.82 98.1641 20C98.1641 16.18 100.48 13.372 104.121 13.372Z" fill="white"/>
+        <path d="M124.148 8.972H118.771V31.032H124.148V8.972Z" fill="white"/>
+        <path d="M156.968 8.424C150.597 8.424 146.009 13.164 146.009 20.124C146.009 26.708 150.558 31.572 156.968 31.572C162.593 31.572 166.478 28.636 167.555 24.148H162.549C161.804 25.952 159.78 27.208 157.133 27.208C153.658 27.208 151.386 24.944 151.22 21.588H167.764V19.868C167.764 13.66 163.958 8.42 156.972 8.42L156.968 8.424ZM151.303 17.736C151.634 14.968 153.95 12.788 156.968 12.788C159.985 12.788 162.384 14.76 162.632 17.736H151.299H151.303Z" fill="white"/>
+        <path d="M183.413 8.424C180.312 8.424 178.163 10.016 177.291 11.652H177.003V8.968H171.875V31.028H177.251V18.404C177.251 15.636 179.113 13.54 181.717 13.54C184.32 13.54 185.894 15.344 185.894 18.028V31.028H191.271V16.6C191.271 11.904 188.293 8.424 183.413 8.424Z" fill="white"/>
+        <path d="M206.418 8.424C199.555 8.424 194.837 13.456 194.837 20C194.837 26.544 199.594 31.576 206.418 31.576C213.243 31.576 218 26.544 218 20C218 13.456 213.243 8.424 206.418 8.424ZM206.418 26.628C202.86 26.628 200.296 23.904 200.296 20C200.296 16.096 202.817 13.372 206.418 13.372C210.02 13.372 212.54 16.18 212.54 20C212.54 23.82 209.976 26.628 206.418 26.628Z" fill="white"/>
+        <path d="M143.69 31.028V26.248H136.116C135 26.248 134.38 25.576 134.38 24.32V8.972H129.004V24.824C129.004 28.724 131.154 31.032 134.96 31.032H143.694L143.69 31.028Z" fill="white"/>
+        <path d="M30.528 20L15.0372 35.708H7.47915L20.2955 22.712H0V17.288H20.2955L7.47915 4.292H15.0372L30.528 20Z" fill="white"/>
+        <path d="M30.5281 0V14.576L35.881 20V0H30.5281Z" fill="white"/>
+        <path d="M30.5281 40H35.881V20L30.5281 25.424V40Z" fill="white"/>
+        </g>
+        <defs>
+          <clipPath id="clip0_31_3109"><rect width="218" height="40" fill="white"/></clipPath>
+        </defs>
+      </svg>
+    </div>
+  </div>
+  <div class="eyebrow"><span class="eyebrow-dot"></span>Marketing Analytics Tool</div>
+  <h1>Break-Even <em>Kalkulátor</em><br>marketingových kampaní</h1>
+  <p class="subtitle">Zjistěte okamžitě maximální CPA a minimální ROAS — klíčové metriky pro udržitelné kampaně.</p>
+</header>
+
+<div class="app">
+  <!-- INPUTS -->
+  <div class="panel">
+    <div class="panel-label">Vstupní parametry</div>
+
+    <div class="field">
+      <label><strong>AOV</strong> — Průměrná hodnota objednávky</label>
+      <div class="input-wrap">
+        <input type="number" id="aov" value="5000" min="0" step="100">
+        <span class="unit">Kč</span>
+      </div>
+      <div class="hint">→ průměrná tržba z jednoho realizovaného leadu</div>
+    </div>
+
+    <div class="field">
+      <label><strong>Marže</strong> — Zisková marže na objednávce</label>
+      <div class="input-wrap">
+        <input type="number" id="margin" value="40" min="0" max="100" step="1">
+        <span class="unit">%</span>
+      </div>
+      <div class="hint">→ podíl zisku z tržby po odečtení nákladů</div>
+    </div>
+
+    <div class="field">
+      <label><strong>Úspěšnost leadu</strong> — Konverzní poměr</label>
+      <div class="input-wrap">
+        <input type="number" id="leadrate" value="25" min="0.1" max="100" step="0.5">
+        <span class="unit">%</span>
+      </div>
+      <div class="hint">→ % leadů, které se stanou platícími zákazníky</div>
+    </div>
+
+    <button class="calc-btn" onclick="triggerLightning()">
+      ⚡ Vypočítat bod zvratu
+    </button>
+
+    <div class="formula-box" style="margin-top:20px;">
+      <div class="formula-title">Výpočtové vzorce</div>
+      <div class="formula-line">Hrubý zisk = AOV × Marže</div>
+      <div class="divider"></div>
+      <div class="formula-line">max CPA = <span>Hrubý zisk × Úspěšnost leadu</span></div>
+      <div class="formula-line">min ROAS = <span>1 ÷ Marže</span></div>
+    </div>
+  </div>
+
+  <!-- OUTPUTS -->
+  <div class="panel">
+    <div class="panel-label">Výsledky — bod zvratu</div>
+
+    <div class="result-block primary">
+      <div class="result-label">Výstup 01</div>
+      <div class="result-name">Maximální přípustné CPA</div>
+      <div class="result-value" id="out-cpa">—</div>
+      <div class="result-sub">Cost Per Acquisition — max. cena za získání leadu</div>
+    </div>
+
+    <div class="result-block secondary">
+      <div class="result-label">Výstup 02</div>
+      <div class="result-name">Minimální požadované ROAS</div>
+      <div class="result-value" id="out-roas">—</div>
+      <div class="result-sub">Return on Ad Spend — minimální návratnost pro bod zvratu</div>
+    </div>
+
+    <div class="status-bar ok" id="status-bar">
+      <div class="status-dot"></div>
+      <span id="status-text">Zadejte parametry a klikněte na výpočet.</span>
+    </div>
+
+    <div class="formula-box" style="margin-top:18px;">
+      <div class="formula-title">Mezivýsledky</div>
+      <div class="formula-line" id="mid-profit">Hrubý zisk na zákazníka: —</div>
+      <div class="formula-line" id="mid-cpc">Max. náklad na lead (CPA): —</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-section">
+  <div class="table-panel">
+    <div class="panel-label">Predikce scénářů CPA — 10 variant</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>CPA (Kč)</th>
+          <th>ROAS</th>
+          <th>Zisk / lead (Kč)</th>
+          <th>Zisk / zákazník (Kč)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="pred-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── AUTO-CALC ──
+['aov','margin','leadrate'].forEach(id =>
+  document.getElementById(id).addEventListener('input', calculate)
+);
+
+function fmt(n, d = 0) {
+  return n.toLocaleString('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function calculate() {
+  const aov      = parseFloat(document.getElementById('aov').value) || 0;
+  const margin   = parseFloat(document.getElementById('margin').value) || 0;
+  const leadrate = parseFloat(document.getElementById('leadrate').value) || 0;
+  const mDec = margin / 100, lDec = leadrate / 100;
+
+  const grossProfit = aov * mDec;
+  const maxCPA      = grossProfit * lDec;
+  const minROAS     = mDec > 0 ? 1 / mDec : 0;
+
+  document.getElementById('out-cpa').textContent  = maxCPA > 0  ? fmt(maxCPA) + ' Kč' : '—';
+  document.getElementById('out-roas').textContent = minROAS > 0 ? fmt(minROAS, 2) + 'x' : '—';
+  document.getElementById('mid-profit').textContent = `Hrubý zisk na zákazníka: ${fmt(grossProfit)} Kč`;
+  document.getElementById('mid-cpc').textContent    = `Max. náklad na lead (CPA): ${fmt(maxCPA)} Kč`;
+
+  const sb = document.getElementById('status-bar');
+  const st = document.getElementById('status-text');
+
+  if (maxCPA <= 0 || minROAS <= 0) {
+    sb.className = 'status-bar warn';
+    st.textContent = 'Zadejte platné hodnoty pro vyhodnocení.';
+  } else if (minROAS >= 1) {
+    sb.className = 'status-bar ok';
+    st.textContent = `Kampaň je zisková při ROAS ≥ ${fmt(minROAS, 2)}x a CPA ≤ ${fmt(maxCPA)} Kč.`;
+  } else {
+    sb.className = 'status-bar warn';
+    st.textContent = 'Zkontrolujte parametry — marže se zdá příliš nízká.';
+  }
+
+  buildTable(maxCPA, grossProfit, aov, lDec);
+}
+
+function buildTable(maxCPA, grossProfit, aov, lDec) {
+  const body = document.getElementById('pred-body');
+  body.innerHTML = '';
+  if (maxCPA <= 0 || aov <= 0) return;
+
+  let step = 100;
+  if (maxCPA > 10000) step = 1000;
+  else if (maxCPA > 5000) step = 500;
+  else if (maxCPA > 2000) step = 200;
+  else if (maxCPA > 500)  step = 100;
+  else if (maxCPA > 100)  step = 50;
+  else if (maxCPA > 20)   step = 10;
+  else step = Math.max(1, Math.round(maxCPA / 10));
+
+  const startCPA = Math.ceil(maxCPA / step) * step;
+
+  for (let i = 0; i < 10; i++) {
+    const cpa = startCPA - i * step;
+    if (cpa <= 0) break;
+
+    const roas = (aov * lDec) / cpa;
+    const profitPerLead = grossProfit * lDec - cpa;
+    const profitPerCustomer = lDec > 0 ? grossProfit - cpa / lDec : 0;
+    const isBreakeven = Math.abs(cpa - maxCPA) < 0.5;
+    const isProfit = profitPerLead > 0.5;
+    const pc = profitPerLead > 0.5 ? 'pos' : profitPerLead < -0.5 ? 'neg' : 'zero';
+
+    const badge = isBreakeven
+      ? '<span class="badge breakeven">Bod zvratu</span>'
+      : isProfit ? '<span class="badge profit">Zisk</span>' : '<span class="badge loss">Ztráta</span>';
+
+    const tr = document.createElement('tr');
+    if (isBreakeven) tr.classList.add('is-breakeven');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td class="cpa-cell">${fmt(cpa)} Kč${badge}</td>
+      <td>${fmt(roas, 2)}x</td>
+      <td class="profit-cell ${pc}">${profitPerLead >= 0 ? '+' : ''}${fmt(profitPerLead)} Kč</td>
+      <td class="profit-cell ${pc}">${profitPerCustomer >= 0 ? '+' : ''}${fmt(profitPerCustomer)} Kč</td>
+      <td style="font-size:13px;font-weight:600;color:${isProfit ? 'var(--success)' : 'var(--danger)'}">
+        ${isProfit ? '✓ Ziskové' : '✗ Ztrátové'}
+      </td>`;
+    body.appendChild(tr);
+  }
+}
+
+// ── LIGHTNING ENGINE ──
+const canvas = document.getElementById('lightning-canvas');
+const ctx = canvas.getContext('2d');
+let animId, bolts = [], startTime;
+const ANIM_DURATION = 2000;
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+
+function makeBolt(delayOverride) {
+  const x = rand(0.05, 0.95) * canvas.width;
+  const segs = [{ x, y: -10 }];
+  let cx = x, cy = 0;
+  const steps = Math.floor(rand(12, 22));
+  for (let i = 1; i <= steps; i++) {
+    cy = (i / steps) * (canvas.height + 20);
+    cx += rand(-90, 90);
+    segs.push({ x: cx, y: cy });
+  }
+
+  // branches
+  const branches = [];
+  const bc = Math.floor(rand(1, 4));
+  for (let b = 0; b < bc; b++) {
+    const idx = Math.floor(rand(2, segs.length - 1));
+    const start = segs[idx];
+    const sub = [{ x: start.x, y: start.y }];
+    let bx = start.x, by = start.y;
+    const bs = Math.floor(rand(3, 8));
+    for (let s = 0; s < bs; s++) {
+      bx += rand(-70, 70);
+      by += rand(25, 70);
+      sub.push({ x: bx, y: by });
+    }
+    branches.push(sub);
+  }
+
+  return {
+    segs, branches,
+    birth: delayOverride !== undefined ? delayOverride : rand(0, 600),
+    life: rand(180, 480),
+    width: rand(1, 4),
+    color: Math.random() < 0.35 ? '#ffffff' : '#ed1e00',
+    glowColor: Math.random() < 0.35 ? 'rgba(255,255,255,0.8)' : 'rgba(237,30,0,0.9)',
+  };
+}
+
+function drawPath(pts, w, color, glowColor, alpha) {
+  if (pts.length < 2) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // glow layer
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = 20;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = w;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  // bright core
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = w * 0.3;
+  ctx.globalAlpha = alpha * 0.7;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function triggerLightning() {
+  calculate();
+
+  // screen flash
+  const fl = document.getElementById('flash-overlay');
+  fl.classList.remove('go');
+  void fl.offsetWidth;
+  fl.classList.add('go');
+
+  bolts = [];
+  for (let i = 0; i < Math.floor(rand(7, 13)); i++) bolts.push(makeBolt());
+
+  cancelAnimationFrame(animId);
+  canvas.classList.add('active');
+  startTime = performance.now();
+
+  function frame(now) {
+    const elapsed = now - startTime;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    bolts.forEach(bolt => {
+      const local = elapsed - bolt.birth;
+      if (local < 0 || local > bolt.life) return;
+      const half = bolt.life / 2;
+      const alpha = local < half ? local / half : 1 - (local - half) / half;
+      drawPath(bolt.segs, bolt.width, bolt.color, bolt.glowColor, alpha * 0.92);
+      bolt.branches.forEach(b => drawPath(b, bolt.width * 0.45, bolt.color, bolt.glowColor, alpha * 0.65));
+    });
+
+    // spawn extra mid-animation
+    if (elapsed > 200 && elapsed < 1400 && Math.random() < 0.06) {
+      const b = makeBolt(elapsed + rand(0, 300));
+      bolts.push(b);
+    }
+
+    if (elapsed < ANIM_DURATION) {
+      animId = requestAnimationFrame(frame);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.classList.remove('active');
+    }
+  }
+
+  animId = requestAnimationFrame(frame);
+}
+
+calculate();
+</script>
+</body>
+</html>
