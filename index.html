@@ -106,8 +106,25 @@
 
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
-  h1 { font-size: clamp(28px, 4.5vw, 44px); font-weight: 900; line-height: 1.08; letter-spacing: -0.025em; }
+  h1 { font-size: clamp(28px, 4.5vw, 44px); font-weight: 900; line-height: 1.5; letter-spacing: -0.025em; }
+  h1 { padding-bottom: 6px; }
   h1 em { font-style: normal; color: var(--red); }
+
+  /* Ruční žluté podtržení klíčového slova — brand prvek Zacíleno */
+  .underlined { position: relative; display: inline-block; }
+  .underlined::after {
+    content: '';
+    position: absolute;
+    left: -5%;
+    right: -5%;
+    bottom: -0.27em;
+    height: 0.62em;
+    background-image: url('graficke-prvky/cary-zluta.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+    pointer-events: none;
+  }
 
   .subtitle { margin-top: 12px; color: var(--muted); font-size: 15px; max-width: 500px; line-height: 1.65; }
 
@@ -246,6 +263,76 @@
   .badge.loss { background: rgba(192,49,31,0.08); border: 1px solid rgba(192,49,31,0.22); color: var(--danger); }
   .badge.profit { background: rgba(30,125,63,0.08); border: 1px solid rgba(30,125,63,0.22); color: var(--success); }
   tr.is-breakeven td { background: rgba(237,30,0,0.04); }
+
+  /* ── MOBIL ── */
+  @media (max-width: 700px) {
+    body { padding: 28px 14px 56px; }
+    header { margin-bottom: 30px; }
+    .logo-row { margin-bottom: 22px; }
+    .logo-svg-wrap { padding: 8px 16px; }
+    .logo-svg-wrap svg { height: 22px; }
+
+    .panel, .table-panel { padding: 20px 16px; border-radius: 12px; }
+    .panel-label { margin-bottom: 20px; }
+    .result-block { padding: 18px 16px; }
+    .result-value { font-size: 30px; }
+    .input-wrap input { font-size: 19px; padding: 12px 46px 12px 14px; }
+    .table-section { margin-top: 16px; }
+
+    /* Tabulka se na mobilu rozpadne na karty — zadne vodorovne posouvani */
+    table, tbody, tr, td { display: block; width: 100%; }
+    thead { display: none; }
+
+    tbody tr {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px 4px;
+      margin-bottom: 12px;
+      background: var(--surface);
+      position: relative;
+    }
+    tbody tr:last-child { margin-bottom: 0; }
+    tbody tr:hover td { background: none; }
+
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      text-align: right;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    td::before {
+      content: attr(data-label);
+      font-family: 'Roboto Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      flex-shrink: 0;
+    }
+    td:last-child { border-bottom: none; }
+    td:first-child { text-align: right; }
+
+    /* Poradove cislo jako zahlavi karty */
+    td.row-num {
+      background: var(--surface2);
+      border-radius: 7px 7px 0 0;
+      font-weight: 700;
+      color: var(--text);
+      font-size: 13px;
+    }
+    td.row-num::before { content: 'Scénář'; }
+
+    .cpa-cell { font-size: 16px; font-weight: 700; }
+    .badge { margin-left: 8px; }
+
+    tr.is-breakeven { border-color: var(--red-border); }
+    tr.is-breakeven td { background: none; }
+    tr.is-breakeven td.row-num { background: var(--red-light); color: var(--red); }
+  }
 </style>
 </head>
 <body>
@@ -276,7 +363,7 @@
       </svg>
     </a>
   </div>
-  <h1>Break-Even <em>Kalkulátor</em><br>marketingových kampaní</h1>
+  <h1>Break-Even <em class="underlined">Kalkulátor</em><br>marketingových kampaní</h1>
   <p class="subtitle">Zjistěte okamžitě maximální CPA a minimální ROAS — klíčové metriky pro udržitelné kampaně.</p>
 </header>
 
@@ -447,12 +534,12 @@ function buildTable(maxCPA, grossProfit, aov, lDec) {
     const tr = document.createElement('tr');
     if (isBreakeven) tr.classList.add('is-breakeven');
     tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td class="cpa-cell">${fmt(cpa)} Kč${badge}</td>
-      <td>${fmt(roas, 2)}x</td>
-      <td class="profit-cell ${pc}">${profitPerLead >= 0 ? '+' : ''}${fmt(profitPerLead)} Kč</td>
-      <td class="profit-cell ${pc}">${profitPerCustomer >= 0 ? '+' : ''}${fmt(profitPerCustomer)} Kč</td>
-      <td style="font-size:13px;font-weight:600;color:${isProfit ? 'var(--success)' : 'var(--danger)'}">
+      <td data-label="#" class="row-num">${i + 1}</td>
+      <td data-label="CPA" class="cpa-cell">${fmt(cpa)} Kč${badge}</td>
+      <td data-label="ROAS">${fmt(roas, 2)}x</td>
+      <td data-label="Zisk / lead" class="profit-cell ${pc}">${profitPerLead >= 0 ? '+' : ''}${fmt(profitPerLead)} Kč</td>
+      <td data-label="Zisk / zákazník" class="profit-cell ${pc}">${profitPerCustomer >= 0 ? '+' : ''}${fmt(profitPerCustomer)} Kč</td>
+      <td data-label="Status" class="status-cell" style="font-size:13px;font-weight:600;color:${isProfit ? 'var(--success)' : 'var(--danger)'}">
         ${isProfit ? '✓ Ziskové' : '✗ Ztrátové'}
       </td>`;
     body.appendChild(tr);
