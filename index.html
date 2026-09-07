@@ -22,7 +22,7 @@
     --text: #1a1917;
     --muted: #8a8780;
     --success: #008C35;
-    --danger: #c0311f;
+    --danger: #ed1e00;
   }
 
   body {
@@ -232,7 +232,7 @@
     font-size: 13px; font-weight: 500; display: flex; align-items: flex-start; gap: 9px; line-height: 1.45;
   }
   .status-bar.ok { background: rgba(0,140,53,0.07); border: 1px solid rgba(0,140,53,0.22); color: var(--success); }
-  .status-bar.warn { background: rgba(192,49,31,0.07); border: 1px solid rgba(192,49,31,0.22); color: var(--danger); }
+  .status-bar.warn { background: rgba(237,30,0,0.07); border: 1px solid rgba(237,30,0,0.22); color: var(--danger); }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; margin-top: 3px; animation: blink 2s infinite; }
 
   .formula-box { margin-top: 18px; padding: 15px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
@@ -247,7 +247,7 @@
 
   table { width: 100%; border-collapse: collapse; margin-top: 16px; }
   thead tr { border-bottom: 1.5px solid var(--border); }
-  th { font-family: 'Roboto Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: right; font-weight: 500; }
+  th { font-family: 'Roboto Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--red); padding: 10px 14px; text-align: right; font-weight: 500; }
   th:first-child { text-align: left; }
   td { font-family: 'Roboto Mono', monospace; font-size: 14px; padding: 13px 14px; text-align: right; border-bottom: 1px solid var(--border); color: var(--text); transition: background 0.12s; }
   td:first-child { text-align: left; font-size: 13px; color: var(--muted); }
@@ -261,9 +261,13 @@
 
   .badge { display: inline-block; font-family: 'Roboto Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; vertical-align: middle; margin-left: 7px; }
   .badge.breakeven { background: rgba(237,30,0,0.1); border: 1px solid rgba(237,30,0,0.28); color: var(--red); }
-  .badge.loss { background: rgba(192,49,31,0.08); border: 1px solid rgba(192,49,31,0.22); color: var(--danger); }
+  .badge.loss { background: rgba(237,30,0,0.08); border: 1px solid rgba(237,30,0,0.22); color: var(--danger); }
   .badge.profit { background: rgba(0,140,53,0.08); border: 1px solid rgba(0,140,53,0.22); color: var(--success); }
   tr.is-breakeven td { background: rgba(237,30,0,0.04); }
+
+  /* ROAS — zlaty akcent, aby sloupec ladil s kartou Výstup 02 */
+  tbody tr td.roas-cell { background: rgba(255,176,0,0.16); font-weight: 600; }
+  tbody tr:hover td.roas-cell { background: rgba(255,176,0,0.26); }
 
   /* ── MOBIL ── */
   @media (max-width: 700px) {
@@ -310,7 +314,7 @@
       font-size: 10px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--red);
       text-align: left;
       flex-shrink: 0;
     }
@@ -537,7 +541,7 @@ function buildTable(maxCPA, grossProfit, aov, lDec) {
     tr.innerHTML = `
       <td data-label="#" class="row-num">${i + 1}</td>
       <td data-label="CPA" class="cpa-cell">${fmt(cpa)} Kč${badge}</td>
-      <td data-label="ROAS">${fmt(roas, 2)}x</td>
+      <td data-label="ROAS" class="roas-cell">${fmt(roas, 2)}x</td>
       <td data-label="Zisk / lead" class="profit-cell ${pc}">${profitPerLead >= 0 ? '+' : ''}${fmt(profitPerLead)} Kč</td>
       <td data-label="Zisk / zákazník" class="profit-cell ${pc}">${profitPerCustomer >= 0 ? '+' : ''}${fmt(profitPerCustomer)} Kč</td>
       <td data-label="Status" class="status-cell" style="font-size:13px;font-weight:600;color:${isProfit ? 'var(--success)' : 'var(--danger)'}">
