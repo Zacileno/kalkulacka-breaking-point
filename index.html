@@ -255,7 +255,7 @@
 
 <header>
   <div class="logo-row">
-    <div class="logo-svg-wrap">
+    <a class="logo-svg-wrap" href="https://www.zacileno.cz/" target="_blank" rel="noopener">
       <svg width="218" height="40" viewBox="0 0 218 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g clip-path="url(#clip0_31_3109)">
         <path d="M53.4429 26.08L63.7859 13.54V8.972H46.9105V13.54H56.9182V13.836L46.5791 26.248V31.028H63.991V26.376H53.4429V26.08Z" fill="white"/>
@@ -274,7 +274,7 @@
           <clipPath id="clip0_31_3109"><rect width="218" height="40" fill="white"/></clipPath>
         </defs>
       </svg>
-    </div>
+    </a>
   </div>
   <div class="eyebrow"><span class="eyebrow-dot"></span>Marketing Analytics Tool</div>
   <h1>Break-Even <em>Kalkulátor</em><br>marketingových kampaní</h1>
@@ -314,7 +314,7 @@
     </div>
 
     <button class="calc-btn" onclick="triggerLightning()">
-      ⚡ Vypočítat bod zvratu
+      ⚡ Zacíleno na bod zvratu
     </button>
 
     <div class="formula-box" style="margin-top:20px;">
@@ -378,11 +378,6 @@
 </div>
 
 <script>
-// ── AUTO-CALC ──
-['aov','margin','leadrate'].forEach(id =>
-  document.getElementById(id).addEventListener('input', calculate)
-);
-
 function fmt(n, d = 0) {
   return n.toLocaleString('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d });
 }
@@ -588,7 +583,6 @@ function triggerLightning() {
   animId = requestAnimationFrame(frame);
 }
 
-calculate();
 </script>
 </body>
 </html>
